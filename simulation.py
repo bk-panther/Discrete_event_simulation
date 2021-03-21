@@ -12,12 +12,12 @@ ARR = 1
 DEP = 2
 SWCH = 3
 TMT = 8
-Q_LENGTH = 1000000
-QUANTUM = 0.010
+Q_LENGTH = 1000
+QUANTUM = 0.001
 SERVICE_TIME = 0.05
 THINK_TIME = 6
 TIMEOUT = 1
-np.random.seed(42)
+np.random.seed(100)
 
 
 # %%
@@ -92,6 +92,9 @@ class Simulation:
         self.dropped_list = []
         self.req_dropped = 0
         self.req_timedout = 0
+        self.through_request = 0
+        self.good_request = 0
+        self.dep_clock = 0
         self.user = [Users(i, self) for i in range(self.no_of_users)]
 
     def arrival_handler(self, event):
@@ -115,6 +118,7 @@ class Simulation:
                 self.arrival_handler(event)
 
             elif event.e_type == DEP:
+                self.dep_clock = event.timestamp
                 self.depart_handler(event)
 
             elif event.e_type == SWCH:
@@ -124,6 +128,10 @@ class Simulation:
                 # print(f"req id of user")
                 # print(f"TMT Event : user {event.req.user}, req {event.req.id} {event.timestamp}")
                 self.user[event.req.user].timeout_handler(event.req.id)
+
+    def cal_utilisation(self):
+        util = (self.s.busy_time/4)/self.clock
+        return util
 
     def display(self):
         print("===================================================")
@@ -220,9 +228,11 @@ class Users:
             return False
 
     def request_finish(self, clock, f_req):
+        self.sim.through_request += 1
+        self.sim.response_list.append((clock - self.req.t_req))
+        self.sim.waitt_list.append(self.req.tp_wait)
         if f_req.id == self.req.id:
-            self.sim.response_list.append((clock - self.req.t_req))
-            self.sim.waitt_list.append(self.req.tp_wait)
+            self.sim.good_request += 1
             self.state = THINK
             self.generate_request()
 
@@ -258,6 +268,7 @@ class Core:
         self.core_id = core_id
         self.state = IDLE
         self.switch_time = sw_time
+        self.busy_start_t = 0
 
     def display(self):
         print("Core:", self.core_id, "Core state:", self.state)
@@ -280,9 +291,10 @@ class Server:
         self.state = IDLE
         self.no_of_cores = cores
         self.cores_list = [Core(i, QUANTUM) for i in range(self.no_of_cores)]
-        self.job_que = Queue(15)
+        self.job_que = Queue(20)
         self.n_reqs = 0
         self.max_reqs = 10
+        self.busy_time = 0
 
     def display(self):
         print("No of request in server:", self.n_reqs)
@@ -306,6 +318,7 @@ class Server:
 
             if self.job_que.isEmpty():
                 core.state = IDLE
+                self.busy_time += sim.clock - core.busy_start_t
                 # print(f"Core {core.core_id} is idle.")
                 return
 
@@ -327,6 +340,7 @@ class Server:
                 if self.n_reqs <= self.no_of_cores:
                     for c in self.cores_list:
                         if c.state == IDLE:
+                            c.busy_start_t = sim.clock
                             # print(f"Core {c.core_id} found idle.")
                             ass_req = self.job_que.dequeue()
                             c.as_request(ass_req)
@@ -360,8 +374,15 @@ class Server:
 
 
 response_matrix = {}
+throughput_matrix = {}
+goodput_matrix = {}
+badput_matrix = {}
+droprate_matrix = {}
+utilisation_matrix = {}
 
 for num_users in range(10, 1000, 10):
+
+    print(num_users)
     num_req = num_users * 100
     sim = Simulation(num_users, num_req)
     sim.advance_time()
@@ -369,12 +390,72 @@ for num_users in range(10, 1000, 10):
     response_matrix[num_users] = avg_response
     print("avg_response =", avg_response)
 
-print(response_matrix)
+    plot1 = plt.figure(1)
+    lists = sorted(response_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('response_time.png')
 
-lists = sorted(response_matrix.items())
 
-x, y = zip(*lists) # unpack a list of pairs into two tuples
+    throughput = sim.through_request/sim.dep_clock
+    print("throughput=", throughput)
+    throughput_matrix[num_users] = throughput
 
-plt.plot(x, y)
-plt.show()
-plt.savefig('response_time.png')
+    plot2 = plt.figure(2)
+    lists = sorted(throughput_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('throughput.png')
+
+
+    goodput = sim.good_request / sim.dep_clock
+    print("goodput=", goodput)
+    goodput_matrix[num_users] = goodput
+
+    plot3 = plt.figure(3)
+    lists = sorted(goodput_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('goodput.png')
+
+    badput = throughput - goodput
+    print("badput=", badput)
+    badput_matrix[num_users] = badput
+
+    plot4 = plt.figure(4)
+    lists = sorted(badput_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('badput.png')
+
+
+    droprate = sim.req_dropped/num_req
+    print("droprate=", droprate)
+    droprate_matrix[num_users] = droprate
+
+    plot5 = plt.figure(5)
+    lists = sorted(droprate_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('droprate.png')
+
+    utilisation = sim.cal_utilisation()
+    utilisation_matrix[num_users] = utilisation
+
+    plot6 = plt.figure(6)
+    lists = sorted(utilisation_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('utilisation.png')
+
+
+
+
+
+
+
+
+# print(response_matrix)
+# print(throughput_matrix)
+
+
