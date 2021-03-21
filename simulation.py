@@ -227,9 +227,9 @@ class Users:
             self.generate_request()
             return False
 
-    def request_finish(self, clock, f_req):
+    def request_finish(self, f_req):
         self.sim.through_request += 1
-        self.sim.response_list.append((clock - self.req.t_req))
+        self.sim.response_list.append(self.sim.clock - f_req.t_req)
         self.sim.waitt_list.append(self.req.tp_wait)
         if f_req.id == self.req.id:
             self.sim.good_request += 1
@@ -306,7 +306,7 @@ class Server:
     def serve(self, sim, event):
         if event.e_type == DEP:
             # print("------Serving DEP event------")
-            sim.user[event.req.user].request_finish(sim.clock, event.req)
+            sim.user[event.req.user].request_finish(event.req)
             self.n_reqs -= 1
 
             core = self.cores_list[event.req.core_num]
