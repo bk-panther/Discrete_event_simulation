@@ -107,7 +107,7 @@ class Simulation:
 
     def advance_time(self):
         while len(self.event_pq) != 0:
-            print(f"Request #{self.req_num}")
+            # print(f"Request #{self.req_num}")
             event = heapq.heappop(self.event_pq)
             self.clock = event.timestamp
 
@@ -121,8 +121,8 @@ class Simulation:
                 self.switch_handler(event)
 
             elif event.e_type == TMT:
-                print(f"req id of user")
-                print(f"TMT Event : user {event.req.user}, req {event.req.id} {event.timestamp}")
+                # print(f"req id of user")
+                # print(f"TMT Event : user {event.req.user}, req {event.req.id} {event.timestamp}")
                 self.user[event.req.user].timeout_handler(event.req.id)
 
     def display(self):
@@ -227,7 +227,7 @@ class Users:
             self.generate_request()
 
     def timeout_handler(self, req_id):
-        print("inside timeout handler", req_id, self.req.id)
+        # print("inside timeout handler", req_id, self.req.id)
         if req_id == self.req.id:
             self.sim.timedout_list.append(self.req.id)
             self.sim.req_timedout += 1
@@ -293,7 +293,7 @@ class Server:
 
     def serve(self, sim, event):
         if event.e_type == DEP:
-            print("------Serving DEP event------")
+            # print("------Serving DEP event------")
             sim.user[event.req.user].request_finish(sim.clock, event.req)
             self.n_reqs -= 1
 
@@ -306,7 +306,7 @@ class Server:
 
             if self.job_que.isEmpty():
                 core.state = IDLE
-                print(f"Core {core.core_id} is idle.")
+                # print(f"Core {core.core_id} is idle.")
                 return
 
             ass_req = self.job_que.dequeue()
@@ -318,7 +318,7 @@ class Server:
             return
 
         elif event.e_type == ARR:
-            print("---Serving ARR event----")
+            # print("---Serving ARR event----")
             if self.n_reqs < self.max_reqs:
                 req = sim.que.dequeue()
                 self.n_reqs += 1
@@ -327,7 +327,7 @@ class Server:
                 if self.n_reqs <= self.no_of_cores:
                     for c in self.cores_list:
                         if c.state == IDLE:
-                            print(f"Core {c.core_id} found idle.")
+                            # print(f"Core {c.core_id} found idle.")
                             ass_req = self.job_que.dequeue()
                             c.as_request(ass_req)
                             ass_req.assign_core(c.core_id)
@@ -336,7 +336,8 @@ class Server:
                             heapq.heappush(sim.event_pq, n_event)
                             break
                 else:
-                    print("All cores busy.")
+                    # print("All cores busy.")
+                    pass
             return
 
         elif event.e_type == SWCH:
@@ -361,7 +362,7 @@ class Server:
 response_matrix = {}
 
 for num_users in range(10, 1000, 10):
-    num_req = num_users * 50
+    num_req = num_users * 100
     sim = Simulation(num_users, num_req)
     sim.advance_time()
     avg_response = mean(sim.response_list)
