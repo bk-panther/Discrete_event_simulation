@@ -6,6 +6,9 @@ import matplotlib.pylab as plt
 import scipy.stats as st
 import statistics
 import math
+import csv
+
+
 THINK = 4
 REQ = 5
 IDLE = 6
@@ -372,102 +375,132 @@ class Server:
 
 
 # %%
-def conf_interval():
-    num_of_run = 20
-    num_of_samples = 5000
-    users = 10
-    beta = 0.95
-    z = st.norm.ppf(beta)
-    avg_resp_list = []
-    conf_list = []
-    for num_users in range(100,200, 10):
-        for run in range(num_of_run):
-            sim = Simulation(num_users, num_of_samples)
-            sim.advance_time()
-            print(f"Users #{num_users} Run #{run} {mean(sim.response_list)}")
-            avg_resp_list.append(mean(sim.response_list))
-        sample_mean = mean(avg_resp_list)
-        sample_var = statistics.pvariance(avg_resp_list)
-        min = sample_mean - (z*(math.sqrt(sample_var/20)))
-        max = sample_mean + (z*(math.sqrt(sample_var/20)))
-        print(f"Users #{num_users} Interval:({min},{max})")
-        conf_list.append((min, max))
-        
-conf_interval()
-# response_matrix = {}
-# throughput_matrix = {}
-# goodput_matrix = {}
-# badput_matrix = {}
-# droprate_matrix = {}
-# utilisation_matrix = {}
-
-# for num_users in range(10, 1000, 10):
-
-#     print(num_users)
-#     num_req = num_users * 100
-#     sim = Simulation(num_users, num_req)
-#     sim.advance_time()
-#     avg_response = mean(sim.response_list)
-#     response_matrix[num_users] = avg_response
-#     print("avg_response =", avg_response)
-
-    # plot1 = plt.figure(1)
-    # lists = sorted(response_matrix.items())
-    # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-    # plt.plot(x, y)
-    # plt.savefig('response_time.png')
+# def conf_interval():
+#     num_of_run = 20
+#     num_of_samples = 5000
+#     users = 10
+#     beta = 0.95
+#     z = st.norm.ppf(beta)
+#     avg_resp_list = []
+#     conf_list = []
+#     for num_users in range(100,200, 10):
+#         for run in range(num_of_run):
+#             sim = Simulation(num_users, num_of_samples)
+#             sim.advance_time()
+#             print(f"Users #{num_users} Run #{run} {mean(sim.response_list)}")
+#             avg_resp_list.append(mean(sim.response_list))
+#         sample_mean = mean(avg_resp_list)
+#         sample_var = statistics.pvariance(avg_resp_list)
+#         min = sample_mean - (z*(math.sqrt(sample_var/20)))
+#         max = sample_mean + (z*(math.sqrt(sample_var/20)))
+#         print(f"Users #{num_users} Interval:({min},{max})")
+#         conf_list.append((min, max))
+#
+# conf_interval()
 
 
-    # throughput = sim.through_request/sim.dep_clock
-    # print("throughput=", throughput)
-    # throughput_matrix[num_users] = throughput
 
-    # plot2 = plt.figure(2)
-    # lists = sorted(throughput_matrix.items())
-    # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-    # plt.plot(x, y)
-    # plt.savefig('throughput.png')
+response_matrix = {}
+throughput_matrix = {}
+goodput_matrix = {}
+badput_matrix = {}
+droprate_matrix = {}
+utilisation_matrix = {}
 
+for num_users in range(10, 700, 10):
 
-    # goodput = sim.good_request / sim.dep_clock
-    # print("goodput=", goodput)
-    # goodput_matrix[num_users] = goodput
+    print(num_users)
+    num_req = num_users * 100
+    sim = Simulation(num_users, num_req)
+    sim.advance_time()
+    avg_response = mean(sim.response_list)
+    response_matrix[num_users] = avg_response
+    print("avg_response =", avg_response)
 
-    # plot3 = plt.figure(3)
-    # lists = sorted(goodput_matrix.items())
-    # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-    # plt.plot(x, y)
-    # plt.savefig('goodput.png')
-
-    # badput = throughput - goodput
-    # print("badput=", badput)
-    # badput_matrix[num_users] = badput
-
-    # plot4 = plt.figure(4)
-    # lists = sorted(badput_matrix.items())
-    # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-    # plt.plot(x, y)
-    # plt.savefig('badput.png')
+    plot1 = plt.figure(1)
+    lists = sorted(response_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('response_time.png')
 
 
-    # droprate = sim.req_dropped/num_req
-    # print("droprate=", droprate)
-    # droprate_matrix[num_users] = droprate
+    throughput = sim.through_request/sim.dep_clock
+    print("throughput=", throughput)
+    throughput_matrix[num_users] = throughput
 
-    # plot5 = plt.figure(5)
-    # lists = sorted(droprate_matrix.items())
-    # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-    # plt.plot(x, y)
-    # plt.savefig('droprate.png')
+    plot2 = plt.figure(2)
+    lists = sorted(throughput_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('throughput.png')
 
-    # utilisation = sim.cal_utilisation()
-    # utilisation_matrix[num_users] = utilisation
 
-    # plot6 = plt.figure(6)
-    # lists = sorted(utilisation_matrix.items())
-    # x, y = zip(*lists)  # unpack a list of pairs into two tuples
-    # plt.plot(x, y)
-    # plt.savefig('utilisation.png')
+
+
+    goodput = sim.good_request / sim.dep_clock
+    print("goodput=", goodput)
+    goodput_matrix[num_users] = goodput
+
+    plot3 = plt.figure(3)
+    lists = sorted(goodput_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('goodput.png')
+
+    badput = throughput - goodput
+    print("badput=", badput)
+    badput_matrix[num_users] = badput
+
+    plot4 = plt.figure(4)
+    lists = sorted(badput_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('badput.png')
+
+
+    droprate = sim.req_dropped/num_req
+    print("droprate=", droprate)
+    droprate_matrix[num_users] = droprate
+
+    plot5 = plt.figure(5)
+    lists = sorted(droprate_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('droprate.png')
+
+    utilisation = sim.cal_utilisation()
+    utilisation_matrix[num_users] = utilisation
+
+    plot6 = plt.figure(6)
+    lists = sorted(utilisation_matrix.items())
+    x, y = zip(*lists)  # unpack a list of pairs into two tuples
+    plt.plot(x, y)
+    plt.savefig('utilisation.png')
+
+
+response_scv = open('response.csv', 'w')
+for key in response_matrix.keys():
+    print(key, response_matrix[key])
+    response_scv.write("%s,%s\n" % (key, response_matrix[key]))
+response_scv.close()
+
+throughput_scv = open('throughput.csv', 'w')
+for key in throughput_matrix.keys():
+    throughput_scv.write("%s,%s\n" % (key, throughput_matrix[key]))
+throughput_scv.close()
+
+utilisation_scv = open('utilisation.csv', 'w')
+for key in utilisation_matrix.keys():
+    utilisation_scv.write("%s,%s\n" % (key, utilisation_matrix[key]))
+utilisation_scv.close()
+
+
+droprate_scv = open('droprate.csv', 'w')
+for key in droprate_matrix.keys():
+    droprate_scv.write("%s,%s\n" % (key, droprate_matrix[key]))
+droprate_scv.close()
+
+
 
 
 
